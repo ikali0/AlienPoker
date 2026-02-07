@@ -57,6 +57,18 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        casino: {
+          green: "hsl(var(--casino-green))",
+          felt: "hsl(var(--casino-felt))",
+          gold: "hsl(var(--casino-gold))",
+          "gold-dim": "hsl(var(--casino-gold-dim))",
+          red: "hsl(var(--casino-red))",
+          blue: "hsl(var(--casino-blue))",
+        },
+        tube: {
+          empty: "hsl(var(--tube-empty))",
+          fill: "hsl(var(--tube-fill))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
