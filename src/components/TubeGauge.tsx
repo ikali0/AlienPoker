@@ -49,7 +49,7 @@ export function TubeGauge({
   }
 
   // Desktop vertical list layout
-  return <div className="bg-card/50 rounded-xl p-4 border border-border px-[11px] py-[11px]">
+  return <div className="bg-card/50 rounded-xl p-4 border border-border py-[10px] px-[10px]">
       <h3 className="text-sm font-semibold uppercase tracking-wider mb-4 text-center text-destructive-foreground">
         Stack Tubes
       </h3>
