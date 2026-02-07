@@ -8,7 +8,14 @@ import { evaluateHand } from '@/utils/handEvaluator';
 import { makeHTDecision } from './htEngine';
 import { initializeTubes, checkStackTriggers, processStackTriggers, refillAllTubes } from './tubeEngine';
 import { resolveRound } from './resolution';
-import { createSimulationStats, updateStatsFromRound, generateReport, logFinalReport } from './statsEngine';
+import { 
+  createSimulationStats, 
+  updateStatsFromRound, 
+  generateReport, 
+  logFinalReport,
+  runPostSimulationAnalysis,
+} from './statsEngine';
+import { generateEconomicAnalysis, EconomicAnalysis } from './mathEngine';
 import {
   SimulationConfig,
   DEFAULT_CONFIG,
@@ -280,6 +287,7 @@ export interface SimulationCallbacks {
   onRoundComplete?: (roundNumber: number, result: RoundResult) => void;
   onProgress?: (completed: number, total: number) => void;
   onLog?: (message: string) => void;
+  onAnalysisComplete?: (analysis: EconomicAnalysis) => void;
 }
 
 export function runSimulation(
@@ -341,9 +349,19 @@ export function runSimulation(
     }
   }
   
+  // Run post-simulation analysis
+  runPostSimulationAnalysis(stats, fullConfig);
+  
   const executionTime = performance.now() - startTime;
   
+  // Generate economic analysis
+  const economicAnalysis = generateEconomicAnalysis(stats, fullConfig);
+  callbacks.onAnalysisComplete?.(economicAnalysis);
+  
   callbacks.onLog?.(`Simulation complete in ${(executionTime / 1000).toFixed(2)}s`);
+  callbacks.onLog?.(`House Edge: ${economicAnalysis.houseEdgePercent.toFixed(2)}% (${economicAnalysis.houseEdgeStatus})`);
+  callbacks.onLog?.(`Volatility Index: ${economicAnalysis.volatilityIndex.toFixed(2)} (${economicAnalysis.riskLevel} risk)`);
+  callbacks.onLog?.(`Exploit Alerts: ${economicAnalysis.exploitCount} (${economicAnalysis.criticalExploits} critical)`);
   
   return {
     config: fullConfig,

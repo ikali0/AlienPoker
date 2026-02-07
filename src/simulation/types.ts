@@ -181,6 +181,58 @@ export interface RoundResult {
 }
 
 // ============================================================================
+// Round Delta Types (for Volatility Calculation)
+// ============================================================================
+
+export interface RoundDelta {
+  roundNumber: number;
+  totalAnte: number;      // A × (P + 1)
+  totalPayout: number;    // playPot + tube - bust
+  netDelta: number;       // ante - payout (house perspective)
+  playerNetDelta: number; // payout - ante (player perspective)
+}
+
+// ============================================================================
+// Volatility Metrics
+// ============================================================================
+
+export interface VolatilityMetrics {
+  roundDeltas: number[];
+  mean: number;
+  variance: number;
+  standardDeviation: number;  // This is the Volatility Index
+  riskLevel: 'low' | 'moderate' | 'high';
+}
+
+// ============================================================================
+// Exploit Detection Types
+// ============================================================================
+
+export interface ExploitAlert {
+  htId: string;
+  calculatedEV: number;
+  threshold: number;
+  exceededBy: number;
+  severity: 'warning' | 'critical';
+  recommendation: string;
+}
+
+// ============================================================================
+// Advanced HT Metrics (extends HTPerformance)
+// ============================================================================
+
+export interface AdvancedHTMetrics extends HTPerformance {
+  avgWinAmount: number;
+  avgLossAmount: number;
+  avgBustPenalty: number;
+  winProbability: number;    // P_win
+  lossProbability: number;   // P_loss
+  bustProbability: number;   // P_bust
+  calculatedEV: number;      // Full EV formula result
+  isExploitable: boolean;
+}
+
+// ============================================================================
 // Simulation Stats Types
 // ============================================================================
 
@@ -202,6 +254,9 @@ export interface SimulationStats {
   houseTakePercent: number;
   playerReturnPercent: number;
   
+  // Dealer ante tracking
+  dealerAnteContribution: number;
+  
   // Tube stats
   tubeStats: Record<TubeType, TubeStats>;
   totalTubePayouts: number;
@@ -219,6 +274,11 @@ export interface SimulationStats {
   // Stack triggers
   stackTriggerCount: number;
   forcedRefills: number;
+  
+  // Advanced metrics
+  roundDeltas: RoundDelta[];
+  volatilityIndex: number;
+  exploitAlerts: ExploitAlert[];
 }
 
 // ============================================================================

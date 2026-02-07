@@ -5,14 +5,36 @@ import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { 
   runSimulation, 
   generateReport, 
   SimulationConfig, 
   SimulationResult,
   DEFAULT_CONFIG,
+  generateEconomicAnalysis,
+  getAdvancedHTMetrics,
+  type EconomicAnalysis,
+  type AdvancedHTMetrics,
 } from '@/simulation';
-import { Play, RotateCcw, BarChart3 } from 'lucide-react';
+import { 
+  Play, 
+  RotateCcw, 
+  BarChart3, 
+  AlertTriangle, 
+  CheckCircle, 
+  TrendingUp,
+  Activity,
+  Shield,
+} from 'lucide-react';
 
 interface SimulationPanelProps {
   onClose?: () => void;
@@ -22,6 +44,8 @@ export function SimulationPanel({ onClose }: SimulationPanelProps) {
   const [isRunning, setIsRunning] = useState(false);
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<SimulationResult | null>(null);
+  const [economicAnalysis, setEconomicAnalysis] = useState<EconomicAnalysis | null>(null);
+  const [advancedHT, setAdvancedHT] = useState<AdvancedHTMetrics[]>([]);
   
   // Configuration state
   const [config, setConfig] = useState<Partial<SimulationConfig>>({
@@ -47,6 +71,8 @@ export function SimulationPanel({ onClose }: SimulationPanelProps) {
     setIsRunning(true);
     setProgress(0);
     setResult(null);
+    setEconomicAnalysis(null);
+    setAdvancedHT([]);
 
     // Run simulation in next tick to allow UI update
     setTimeout(() => {
@@ -54,9 +80,24 @@ export function SimulationPanel({ onClose }: SimulationPanelProps) {
         onProgress: (completed, total) => {
           setProgress((completed / total) * 100);
         },
+        onAnalysisComplete: (analysis) => {
+          setEconomicAnalysis(analysis);
+        },
       });
       
       setResult(simResult);
+      
+      // Calculate advanced HT metrics
+      const fullConfig = { ...DEFAULT_CONFIG, ...config };
+      const htMetrics = getAdvancedHTMetrics(simResult.stats, fullConfig);
+      setAdvancedHT(htMetrics);
+      
+      // Also generate economic analysis if not received via callback
+      if (!economicAnalysis) {
+        const analysis = generateEconomicAnalysis(simResult.stats, fullConfig);
+        setEconomicAnalysis(analysis);
+      }
+      
       setIsRunning(false);
       setProgress(100);
     }, 10);
@@ -65,6 +106,8 @@ export function SimulationPanel({ onClose }: SimulationPanelProps) {
   const reset = () => {
     setResult(null);
     setProgress(0);
+    setEconomicAnalysis(null);
+    setAdvancedHT([]);
     setConfig({
       ...DEFAULT_CONFIG,
       roundsPerRun: 10000,
@@ -217,6 +260,226 @@ export function SimulationPanel({ onClose }: SimulationPanelProps) {
         </CardContent>
       </Card>
 
+      {/* Economic Health Card */}
+      {economicAnalysis && (
+        <Card className="bg-card border-border">
+          <CardHeader className="py-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <TrendingUp className="w-4 h-4" />
+              Economic Analysis
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* House Edge with Target Indicator */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">House Edge</span>
+                <div className="flex items-center gap-2">
+                  <span className={`font-bold ${
+                    economicAnalysis.houseEdgeStatus === 'optimal' 
+                      ? 'text-accent' 
+                      : economicAnalysis.houseEdgeStatus === 'low'
+                        ? 'text-amber-500'
+                        : 'text-destructive'
+                  }`}>
+                    {economicAnalysis.houseEdgePercent.toFixed(2)}%
+                  </span>
+                  {economicAnalysis.isInTargetRange ? (
+                    <Badge variant="default" className="text-[10px] bg-accent text-accent-foreground">
+                      <CheckCircle className="w-3 h-3 mr-1" />
+                      IN RANGE
+                    </Badge>
+                  ) : (
+                    <Badge variant="destructive" className="text-[10px]">
+                      <AlertTriangle className="w-3 h-3 mr-1" />
+                      {economicAnalysis.houseEdgeStatus.toUpperCase()}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+              <div className="relative h-2 bg-muted rounded-full overflow-hidden">
+                <div 
+                  className="absolute left-[30%] w-[40%] h-full bg-accent/30"
+                  title="Target Range: 3% - 7%"
+                />
+                <div 
+                  className={`absolute h-full w-1 ${
+                    economicAnalysis.isInTargetRange ? 'bg-accent' : 'bg-destructive'
+                  }`}
+                  style={{ 
+                    left: `${Math.min(Math.max(economicAnalysis.houseEdgePercent, 0), 10) * 10}%` 
+                  }}
+                />
+              </div>
+              <div className="flex justify-between text-[10px] text-muted-foreground">
+                <span>0%</span>
+                <span>Target: 3-7%</span>
+                <span>10%</span>
+              </div>
+            </div>
+
+            {/* Volatility Index */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Activity className="w-4 h-4 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">Volatility Index</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-mono font-bold">
+                  {economicAnalysis.volatilityIndex.toFixed(2)}
+                </span>
+                <Badge 
+                  variant={
+                    economicAnalysis.riskLevel === 'low' 
+                      ? 'default' 
+                      : economicAnalysis.riskLevel === 'moderate'
+                        ? 'secondary'
+                        : 'destructive'
+                  }
+                  className="text-[10px]"
+                >
+                  {economicAnalysis.riskLevel.toUpperCase()}
+                </Badge>
+              </div>
+            </div>
+
+            {/* Exploit Count */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Shield className="w-4 h-4 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">Exploit Detection</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {economicAnalysis.exploitCount === 0 ? (
+                  <Badge variant="default" className="text-[10px] bg-accent text-accent-foreground">
+                    <CheckCircle className="w-3 h-3 mr-1" />
+                    SECURE
+                  </Badge>
+                ) : (
+                  <Badge 
+                    variant={economicAnalysis.criticalExploits > 0 ? 'destructive' : 'secondary'}
+                    className="text-[10px]"
+                  >
+                    <AlertTriangle className="w-3 h-3 mr-1" />
+                    {economicAnalysis.exploitCount} ALERT{economicAnalysis.exploitCount > 1 ? 'S' : ''}
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Exploit Alerts Card */}
+      {economicAnalysis && economicAnalysis.exploitAlerts.length > 0 && (
+        <Card className="bg-card border-border border-amber-500/50">
+          <CardHeader className="py-3">
+            <CardTitle className="text-sm flex items-center gap-2 text-amber-500">
+              <AlertTriangle className="w-4 h-4" />
+              Exploit Alerts
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {economicAnalysis.exploitAlerts.map((alert, idx) => (
+              <div 
+                key={idx} 
+                className={`p-3 rounded-lg border ${
+                  alert.severity === 'critical' 
+                    ? 'bg-destructive/10 border-destructive/30' 
+                    : 'bg-amber-500/10 border-amber-500/30'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-mono font-bold text-primary">{alert.htId}</span>
+                  <Badge 
+                    variant={alert.severity === 'critical' ? 'destructive' : 'secondary'}
+                    className="text-[10px]"
+                  >
+                    {alert.severity.toUpperCase()}
+                  </Badge>
+                </div>
+                <div className="text-xs space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">EV:</span>
+                    <span className="text-accent font-mono">+{alert.calculatedEV.toFixed(3)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Threshold:</span>
+                    <span className="font-mono">{alert.threshold.toFixed(3)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Exceeded by:</span>
+                    <span className="text-destructive font-mono">+{alert.exceededBy.toFixed(3)}</span>
+                  </div>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-2 italic">
+                  {alert.recommendation}
+                </p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* HT Performance Matrix */}
+      {advancedHT.length > 0 && (
+        <Card className="bg-card border-border">
+          <CardHeader className="py-3">
+            <CardTitle className="text-sm">HT Performance Matrix</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs w-24">HT_ID</TableHead>
+                    <TableHead className="text-xs text-right">Uses</TableHead>
+                    <TableHead className="text-xs text-right">Win%</TableHead>
+                    <TableHead className="text-xs text-right">Loss%</TableHead>
+                    <TableHead className="text-xs text-right">Bust%</TableHead>
+                    <TableHead className="text-xs text-right">EV</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {advancedHT.slice(0, 10).map((ht) => (
+                    <TableRow 
+                      key={ht.htId}
+                      className={ht.isExploitable ? 'bg-amber-500/10' : ''}
+                    >
+                      <TableCell className="font-mono text-xs text-primary">
+                        {ht.htId}
+                        {ht.isExploitable && (
+                          <AlertTriangle className="w-3 h-3 inline ml-1 text-amber-500" />
+                        )}
+                      </TableCell>
+                      <TableCell className="text-xs text-right">
+                        {ht.timesUsed.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-xs text-right text-accent">
+                        {(ht.winProbability * 100).toFixed(1)}%
+                      </TableCell>
+                      <TableCell className="text-xs text-right">
+                        {(ht.lossProbability * 100).toFixed(1)}%
+                      </TableCell>
+                      <TableCell className="text-xs text-right text-destructive">
+                        {(ht.bustProbability * 100).toFixed(1)}%
+                      </TableCell>
+                      <TableCell className={`text-xs text-right font-mono ${
+                        ht.calculatedEV > 0 
+                          ? ht.isExploitable ? 'text-amber-500 font-bold' : 'text-accent' 
+                          : 'text-muted-foreground'
+                      }`}>
+                        {ht.calculatedEV >= 0 ? '+' : ''}{ht.calculatedEV.toFixed(3)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Results Section */}
       {report && (
         <>
@@ -232,6 +495,10 @@ export function SimulationPanel({ onClose }: SimulationPanelProps) {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Execution Time</span>
                 <span>{(result!.executionTimeMs / 1000).toFixed(2)}s</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Pot per Round</span>
+                <span>{config.ante! * (config.playerCount! + 1)} chips</span>
               </div>
             </CardContent>
           </Card>
@@ -277,7 +544,7 @@ export function SimulationPanel({ onClose }: SimulationPanelProps) {
             <CardContent className="space-y-2 text-xs">
               <div className="flex justify-between font-bold">
                 <span>Net Profit</span>
-                <span className={report.houseStats.netProfit >= 0 ? 'text-casino-gold' : 'text-destructive'}>
+                <span className={report.houseStats.netProfit >= 0 ? 'text-primary' : 'text-destructive'}>
                   {report.houseStats.netProfit >= 0 ? '+' : ''}{report.houseStats.netProfit.toLocaleString()}
                 </span>
               </div>
@@ -297,29 +564,10 @@ export function SimulationPanel({ onClose }: SimulationPanelProps) {
                 <div key={tube.tubeType} className="flex justify-between items-center">
                   <span className="text-muted-foreground">{tube.tubeType}</span>
                   <div className="text-right">
-                    <span className="text-casino-gold">{tube.hitCount}</span>
+                    <span className="text-primary">{tube.hitCount}</span>
                     <span className="text-muted-foreground"> hits, </span>
                     <span>{tube.totalTaken}</span>
                     <span className="text-muted-foreground"> paid</span>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card border-border">
-            <CardHeader className="py-3">
-              <CardTitle className="text-sm">Top Hold Types</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-xs">
-              {report.topHT.slice(0, 5).map(ht => (
-                <div key={ht.htId} className="flex justify-between items-center">
-                  <span className="font-mono text-primary">{ht.htId}</span>
-                  <div className="text-right">
-                    <span>{ht.timesUsed.toLocaleString()}x</span>
-                    <span className="text-muted-foreground"> · </span>
-                    <span className="text-accent">{ht.winRate.toFixed(0)}%</span>
-                    <span className="text-muted-foreground"> win</span>
                   </div>
                 </div>
               ))}

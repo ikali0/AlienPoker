@@ -12,7 +12,18 @@ import {
   RoundResult,
   SimulationConfig,
   HTPerformance,
+  RoundDelta,
+  ExploitAlert,
+  AdvancedHTMetrics,
 } from './types';
+import {
+  calculatePotPerRound,
+  calculateVolatility,
+  calculateHTExpectedValue,
+  detectExploits,
+  createRoundDelta,
+  calculateAdvancedHTMetrics,
+} from './mathEngine';
 
 // ============================================================================
 // Stats Initialization
@@ -33,6 +44,9 @@ export function createSimulationStats(config: SimulationConfig): SimulationStats
     houseNetProfit: 0,
     houseTakePercent: 0,
     playerReturnPercent: 0,
+    
+    // Dealer ante tracking
+    dealerAnteContribution: 0,
     
     tubeStats: {
       ST: { totalFunded: 0, totalTaken: 0, hitCount: 0, avgDepletionRate: 0 },
@@ -63,6 +77,11 @@ export function createSimulationStats(config: SimulationConfig): SimulationStats
     
     stackTriggerCount: 0,
     forcedRefills: 0,
+    
+    // Advanced metrics
+    roundDeltas: [],
+    volatilityIndex: 0,
+    exploitAlerts: [],
   };
 }
 
@@ -77,7 +96,14 @@ export function updateStatsFromRound(
 ): void {
   stats.roundsCompleted++;
   
+  // Track dealer ante contribution using proper formula: Pot = A × (P + 1)
+  stats.dealerAnteContribution += config.ante;
+  
   // Process player results
+  let roundPlayerPayout = 0;
+  let roundTubePayout = 0;
+  let roundBustPenalties = 0;
+  
   for (const result of roundResult.participantResults) {
     stats.totalPlayerInputs += config.ante;
     
@@ -85,15 +111,18 @@ export function updateStatsFromRound(
       case 'win':
         stats.totalPlayerWins++;
         stats.playerNetCredits += result.payout;
+        roundPlayerPayout += result.payout;
         break;
       case 'lose':
         stats.totalPlayerLosses++;
         stats.playerNetCredits += result.payout;
+        roundPlayerPayout += result.payout;
         break;
       case 'bust':
         stats.totalPlayerBusts++;
         stats.totalBusts++;
         stats.playerNetCredits -= result.bustPenalty;
+        roundBustPenalties += result.bustPenalty;
         break;
     }
     
@@ -105,6 +134,7 @@ export function updateStatsFromRound(
     // Track tube payouts
     if (result.tubePayout > 0) {
       stats.totalTubePayouts += result.tubePayout;
+      roundTubePayout += result.tubePayout;
     }
     
     // Track HT performance
@@ -149,15 +179,57 @@ export function updateStatsFromRound(
   // Track stack triggers
   stats.stackTriggerCount += roundResult.stackTriggers.length;
   
-  // House stats
-  stats.totalHouseInputs += roundResult.playPotCollected;
-  stats.houseNetProfit = stats.totalPlayerInputs - stats.playerNetCredits - stats.totalTubePayouts;
+  // House stats using correct formula: Pot = A × (P + 1)
+  const potPerRound = calculatePotPerRound(config);
+  stats.totalHouseInputs = potPerRound * stats.roundsCompleted;
+  stats.houseNetProfit = stats.totalHouseInputs - stats.playerNetCredits - stats.totalTubePayouts;
   
-  // Calculate percentages
-  if (stats.totalPlayerInputs > 0) {
-    stats.houseTakePercent = (stats.houseNetProfit / stats.totalPlayerInputs) * 100;
+  // Calculate percentages using proper House Edge formula
+  if (stats.totalHouseInputs > 0) {
+    stats.houseTakePercent = (stats.houseNetProfit / stats.totalHouseInputs) * 100;
     stats.playerReturnPercent = 100 - stats.houseTakePercent;
   }
+  
+  // Create and store round delta for volatility calculation
+  const roundDelta = createRoundDelta(
+    stats.roundsCompleted,
+    config,
+    roundPlayerPayout,
+    roundTubePayout,
+    roundBustPenalties
+  );
+  stats.roundDeltas.push(roundDelta);
+  
+  // Update volatility index (recalculate every 100 rounds for performance)
+  if (stats.roundsCompleted % 100 === 0 || stats.roundsCompleted === stats.totalRounds) {
+    stats.volatilityIndex = calculateVolatility(stats.roundDeltas.map(rd => rd.netDelta));
+  }
+}
+
+/**
+ * Run post-simulation analysis (exploit detection, final volatility)
+ */
+export function runPostSimulationAnalysis(
+  stats: SimulationStats,
+  config: SimulationConfig
+): void {
+  // Calculate final volatility
+  stats.volatilityIndex = calculateVolatility(stats.roundDeltas.map(rd => rd.netDelta));
+  
+  // Run exploit detection
+  stats.exploitAlerts = detectExploits(stats.htPerformance, config.ante);
+}
+
+/**
+ * Get advanced metrics for all Hold Types
+ */
+export function getAdvancedHTMetrics(
+  stats: SimulationStats,
+  config: SimulationConfig
+): AdvancedHTMetrics[] {
+  return Object.values(stats.htPerformance)
+    .map(ht => calculateAdvancedHTMetrics(ht, config.ante))
+    .sort((a, b) => b.timesUsed - a.timesUsed);
 }
 
 // ============================================================================

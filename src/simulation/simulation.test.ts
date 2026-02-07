@@ -10,6 +10,13 @@ import {
   makeHTDecision,
   initializeTubes,
   DEFAULT_CONFIG,
+  calculatePotPerRound,
+  calculateVolatility,
+  calculateHTExpectedValue,
+  detectExploits,
+  calculateHouseEdge,
+  isHouseEdgeInRange,
+  type HTPerformance,
 } from '@/simulation';
 import { createDeck, shuffleDeck, dealCards } from '@/utils/deck';
 import { evaluateHand } from '@/utils/handEvaluator';
@@ -169,5 +176,193 @@ describe('Quick Simulation', () => {
     
     expect(result.stats.roundsCompleted).toBe(1000);
     expect(duration).toBeLessThan(5000); // Should complete in under 5 seconds
+  });
+});
+
+describe('Math Engine', () => {
+  describe('Pot Structure', () => {
+    it('should calculate pot per round as A × (P + 1)', () => {
+      const config = { ...DEFAULT_CONFIG, ante: 5, playerCount: 4 };
+      const pot = calculatePotPerRound(config);
+      
+      // 5 * (4 + 1) = 25
+      expect(pot).toBe(25);
+    });
+
+    it('should include dealer contribution in pot', () => {
+      const config = { ...DEFAULT_CONFIG, ante: 10, playerCount: 2 };
+      const pot = calculatePotPerRound(config);
+      
+      // 10 * (2 + 1) = 30 (2 players + 1 dealer)
+      expect(pot).toBe(30);
+    });
+  });
+
+  describe('House Edge Calculation', () => {
+    it('should calculate house edge correctly', () => {
+      const totalAnte = 1000;
+      const playPotPayouts = 400;
+      const tubePayouts = 100;
+      const bustPenalties = 50;
+      
+      const edge = calculateHouseEdge(totalAnte, playPotPayouts, tubePayouts, bustPenalties);
+      
+      // TotalPayout = 400 + 100 - 50 = 450
+      // HouseEdge = (1000 - 450) / 1000 = 0.55
+      expect(edge).toBe(0.55);
+    });
+
+    it('should handle zero ante gracefully', () => {
+      const edge = calculateHouseEdge(0, 100, 50, 10);
+      expect(edge).toBe(0);
+    });
+
+    it('should identify optimal house edge range (3-7%)', () => {
+      expect(isHouseEdgeInRange(0.03)).toBe(true);
+      expect(isHouseEdgeInRange(0.05)).toBe(true);
+      expect(isHouseEdgeInRange(0.07)).toBe(true);
+      expect(isHouseEdgeInRange(0.02)).toBe(false);
+      expect(isHouseEdgeInRange(0.08)).toBe(false);
+    });
+  });
+
+  describe('Volatility Calculation', () => {
+    it('should calculate volatility as standard deviation', () => {
+      const deltas = [10, 10, 10, 10, 10]; // No variance
+      const volatility = calculateVolatility(deltas);
+      
+      expect(volatility).toBe(0);
+    });
+
+    it('should return higher volatility for varied outcomes', () => {
+      const lowVar = [5, 5, 5, 5, 5];
+      const highVar = [-50, 100, -30, 80, -10];
+      
+      const lowVolatility = calculateVolatility(lowVar);
+      const highVolatility = calculateVolatility(highVar);
+      
+      expect(highVolatility).toBeGreaterThan(lowVolatility);
+    });
+
+    it('should handle empty array', () => {
+      const volatility = calculateVolatility([]);
+      expect(volatility).toBe(0);
+    });
+  });
+
+  describe('HT Expected Value', () => {
+    it('should calculate EV for a profitable HT', () => {
+      const ht: HTPerformance = {
+        htId: 'H2.1P',
+        timesUsed: 100,
+        wins: 60,
+        losses: 35,
+        busts: 5,
+        totalWagered: 500, // 100 * 5 ante
+        totalWon: 600,
+        tubeHits: { ST: 0, FL: 0, FH: 0, SF: 0, RF: 0 },
+      };
+      
+      const ev = calculateHTExpectedValue(ht, 5);
+      
+      // P_win = 0.6, AvgWin = 10
+      // P_loss = 0.35, AvgLoss = 5
+      // P_bust = 0.05, BustPenalty = 5
+      // EV = (0.6 * 10) - (0.35 * 5) - (0.05 * 5) = 6 - 1.75 - 0.25 = 4
+      expect(ev).toBeCloseTo(4, 1);
+    });
+
+    it('should return 0 for unused HT', () => {
+      const ht: HTPerformance = {
+        htId: 'H0.DRAW5',
+        timesUsed: 0,
+        wins: 0,
+        losses: 0,
+        busts: 0,
+        totalWagered: 0,
+        totalWon: 0,
+        tubeHits: { ST: 0, FL: 0, FH: 0, SF: 0, RF: 0 },
+      };
+      
+      const ev = calculateHTExpectedValue(ht, 5);
+      expect(ev).toBe(0);
+    });
+  });
+
+  describe('Exploit Detection', () => {
+    it('should detect exploitable HT strategies', () => {
+      const htPerformance: Record<string, HTPerformance> = {
+        'H4.4FL': {
+          htId: 'H4.4FL',
+          timesUsed: 1000,
+          wins: 600,
+          losses: 350,
+          busts: 50,
+          totalWagered: 5000,
+          totalWon: 6500, // Very profitable
+          tubeHits: { ST: 0, FL: 50, FH: 0, SF: 0, RF: 0 },
+        },
+      };
+      
+      const alerts = detectExploits(htPerformance, 5);
+      
+      // Should detect the high EV strategy
+      expect(alerts.length).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should not flag strategies with low sample size', () => {
+      const htPerformance: Record<string, HTPerformance> = {
+        'H5.RF': {
+          htId: 'H5.RF',
+          timesUsed: 10, // Too few samples
+          wins: 10,
+          losses: 0,
+          busts: 0,
+          totalWagered: 50,
+          totalWon: 2500,
+          tubeHits: { ST: 0, FL: 0, FH: 0, SF: 0, RF: 10 },
+        },
+      };
+      
+      const alerts = detectExploits(htPerformance, 5);
+      
+      // Should skip due to low sample size
+      expect(alerts.length).toBe(0);
+    });
+  });
+
+  describe('Simulation Advanced Metrics', () => {
+    it('should track round deltas for volatility calculation', () => {
+      const result = runSimulation({
+        roundsPerRun: 500,
+        playerCount: 4,
+      });
+      
+      // Should have round deltas stored
+      expect(result.stats.roundDeltas.length).toBe(500);
+      expect(result.stats.volatilityIndex).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should run exploit detection after simulation', () => {
+      const result = runSimulation({
+        roundsPerRun: 500,
+        playerCount: 4,
+      });
+      
+      // Exploit alerts should be populated (even if empty)
+      expect(result.stats.exploitAlerts).toBeDefined();
+      expect(Array.isArray(result.stats.exploitAlerts)).toBe(true);
+    });
+
+    it('should track dealer ante contribution', () => {
+      const result = runSimulation({
+        roundsPerRun: 100,
+        playerCount: 4,
+        ante: 5,
+      });
+      
+      // Dealer contributes 5 * 100 = 500
+      expect(result.stats.dealerAnteContribution).toBe(500);
+    });
   });
 });

@@ -41,6 +41,10 @@ export type {
   HTDecision,
   HTCategory,
   HTPerformance,
+  RoundDelta,
+  VolatilityMetrics,
+  ExploitAlert,
+  AdvancedHTMetrics,
 } from './types';
 
 export { DEFAULT_CONFIG, HAND_TO_TUBE, handRankToTubeType, tubeTypeToHandRank } from './types';
@@ -90,5 +94,25 @@ export {
   updateStatsFromRound,
   generateReport,
   logFinalReport,
+  runPostSimulationAnalysis,
+  getAdvancedHTMetrics,
   type SimulationReport,
 } from './statsEngine';
+
+// Math Engine
+export {
+  calculatePotPerRound,
+  calculateTotalAnte,
+  calculateHouseEdge,
+  calculateHouseEdgeFromStats,
+  isHouseEdgeInRange,
+  getHouseEdgeStatus,
+  calculateVolatility,
+  calculateVolatilityMetrics,
+  calculateHTExpectedValue,
+  calculateAdvancedHTMetrics,
+  detectExploits,
+  createRoundDelta,
+  generateEconomicAnalysis,
+  type EconomicAnalysis,
+} from './mathEngine';
