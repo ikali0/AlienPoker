@@ -278,6 +278,13 @@ export function useGameState() {
     });
   }, []);
 
+  const addCredits = useCallback((amount: number) => {
+    setState(prev => ({
+      ...prev,
+      credits: prev.credits + amount,
+    }));
+  }, []);
+
   return {
     ...state,
     ante: ANTE,
@@ -287,5 +294,6 @@ export function useGameState() {
     draw,
     newHand,
     resetGame,
+    addCredits,
   };
 }

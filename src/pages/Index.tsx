@@ -1,19 +1,40 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useGameState } from '@/hooks/useGameState';
+import { useDailyChallenges } from '@/hooks/useDailyChallenges';
 import { Hand } from '@/components/Hand';
 import { TubeGauge } from '@/components/TubeGauge';
 import { StatsPanel } from '@/components/StatsPanel';
 import { GameControls } from '@/components/GameControls';
 import { ResultOverlay } from '@/components/ResultOverlay';
+import { HandRankingsPopup } from '@/components/HandRankingsPopup';
+import { DailyChallenges } from '@/components/DailyChallenges';
 import { cn } from '@/lib/utils';
 
 const Index = () => {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const game = useGameState();
+  const challenges = useDailyChallenges();
 
   const isPlayerTurn = game.phase === 'holding';
   const showHands = game.playerHand.length > 0;
   const showResults = game.phase === 'showdown' || game.phase === 'result';
+
+  // Track game results for challenges
+  useEffect(() => {
+    if (game.phase === 'result' && game.result) {
+      const isWin = game.result === 'win';
+      const isBust = game.result === 'bust';
+      const handRank = game.playerHandResult?.rank;
+      challenges.recordHandResult(isWin, isBust, handRank);
+    }
+  }, [game.phase, game.result, game.playerHandResult?.rank]);
+
+  const handleClaimReward = (challengeId: string) => {
+    const reward = challenges.claimReward(challengeId);
+    if (reward > 0) {
+      game.addCredits(reward);
+    }
+  };
 
   return (
     <div className={cn(
@@ -26,8 +47,11 @@ const Index = () => {
           <h1 className="text-2xl md:text-3xl font-bold text-casino-gold tracking-wide">
             Stack Draw
           </h1>
-          <div className="text-sm text-muted-foreground">
-            5-Card Draw Poker
+          <div className="flex items-center gap-3">
+            <HandRankingsPopup />
+            <span className="text-sm text-muted-foreground hidden sm:inline">
+              5-Card Draw Poker
+            </span>
           </div>
         </div>
       </header>
@@ -36,7 +60,7 @@ const Index = () => {
       <main className="flex-1 container max-w-6xl mx-auto p-4 flex flex-col gap-6">
         <div className="flex flex-col lg:flex-row gap-6 flex-1">
           {/* Left Sidebar - Tubes */}
-          <aside className="lg:w-56 shrink-0">
+          <aside className="lg:w-56 shrink-0 space-y-4">
             <TubeGauge 
               tubes={game.tubes} 
               highlightedTube={game.highlightedTube}
@@ -111,8 +135,8 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Right Sidebar - Stats */}
-          <aside className="lg:w-56 shrink-0">
+          {/* Right Sidebar - Stats & Challenges */}
+          <aside className="lg:w-56 shrink-0 space-y-4">
             <StatsPanel
               handsPlayed={game.stats.handsPlayed}
               wins={game.stats.wins}
@@ -120,6 +144,11 @@ const Index = () => {
               busts={game.stats.busts}
               totalWagered={game.stats.totalWagered}
               totalWon={game.stats.totalWon}
+            />
+            <DailyChallenges
+              challenges={challenges.challenges}
+              currentStreak={challenges.currentStreak}
+              onClaimReward={handleClaimReward}
             />
           </aside>
         </div>
