@@ -25,14 +25,15 @@ export function Hand({
 }: HandProps) {
   return (
     <div className={cn(
-      'flex flex-col items-center gap-3',
+      'flex flex-col items-center gap-2 sm:gap-3',
       isWinner && 'animate-win-pulse'
     )}>
-      <h3 className="text-lg font-semibold text-muted-foreground uppercase tracking-wider">
+      <h3 className="text-sm sm:text-lg font-semibold text-muted-foreground uppercase tracking-wider">
         {label}
       </h3>
       
-      <div className="flex gap-2 sm:gap-3">
+      {/* Card container with tighter gap on mobile */}
+      <div className="flex gap-1 xs:gap-1.5 sm:gap-2 md:gap-3">
         {cards.map((card, index) => (
           <PlayingCard
             key={card.id}
@@ -48,7 +49,7 @@ export function Hand({
 
       {handName && (
         <div className={cn(
-          'text-lg font-bold mt-2 px-4 py-1 rounded-full',
+          'text-sm sm:text-lg font-bold mt-1 sm:mt-2 px-3 sm:px-4 py-0.5 sm:py-1 rounded-full',
           isWinner 
             ? 'bg-primary/20 text-casino-gold casino-glow' 
             : 'bg-muted text-muted-foreground'

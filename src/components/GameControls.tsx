@@ -28,13 +28,13 @@ export function GameControls({
   canAffordAnte,
 }: GameControlsProps) {
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-col items-center gap-3 sm:gap-4">
       {/* Credit Display */}
       <div className="text-center">
-        <div className="text-3xl font-bold text-casino-gold casino-glow">
+        <div className="text-2xl sm:text-3xl font-bold text-casino-gold casino-glow">
           {credits.toLocaleString()}
         </div>
-        <div className="text-xs text-muted-foreground uppercase tracking-wider">
+        <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">
           Credits
         </div>
       </div>
@@ -47,7 +47,7 @@ export function GameControls({
             disabled={!canAffordAnte}
             size="lg"
             className={cn(
-              'px-8 py-6 text-lg font-bold uppercase tracking-wider',
+              'px-6 sm:px-8 py-5 sm:py-6 text-base sm:text-lg font-bold uppercase tracking-wider',
               'bg-gradient-to-r from-casino-gold-dim via-casino-gold to-casino-gold-dim',
               'hover:brightness-110',
               'text-primary-foreground shadow-lg',
@@ -55,7 +55,7 @@ export function GameControls({
               canAffordAnte && 'casino-glow hover:casino-glow-strong'
             )}
           >
-            Deal ({ante} Credits)
+            Deal ({ante})
           </Button>
         )}
 
@@ -64,7 +64,7 @@ export function GameControls({
             onClick={onDraw}
             size="lg"
             className={cn(
-              'px-8 py-6 text-lg font-bold uppercase tracking-wider',
+              'px-6 sm:px-8 py-5 sm:py-6 text-base sm:text-lg font-bold uppercase tracking-wider',
               'bg-gradient-to-r from-accent via-secondary to-accent',
               'hover:brightness-110',
               'text-primary-foreground shadow-lg casino-glow',
@@ -81,7 +81,7 @@ export function GameControls({
             disabled={!canAffordAnte}
             size="lg"
             className={cn(
-              'px-8 py-6 text-lg font-bold uppercase tracking-wider',
+              'px-6 sm:px-8 py-5 sm:py-6 text-base sm:text-lg font-bold uppercase tracking-wider',
               'bg-gradient-to-r from-casino-gold-dim via-casino-gold to-casino-gold-dim',
               'hover:brightness-110',
               'text-primary-foreground shadow-lg',
