@@ -35,7 +35,7 @@ export function StatsPanel({
   }];
   return <div className="bg-card/50 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-border mx-2 sm:mx-0 px-[11px] py-[11px]">
       <h3 className="text-sm font-semibold uppercase tracking-wider mb-4 text-center text-primary">
-        Statistics
+        ​scoreboard
       </h3>
       
       <div className="grid grid-cols-2 gap-3 text-purple-400">
@@ -47,7 +47,7 @@ export function StatsPanel({
             <div className={cn("text-small font-bold tabular-nums text-purple-300", color)}>
               {value}
             </div>
-            <div className="text-xs text-muted-foreground uppercase">
+            <div className="text-xs uppercase text-secondary-foreground">
               {label}
             </div>
           </div>)}
