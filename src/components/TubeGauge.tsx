@@ -21,7 +21,7 @@ export function TubeGauge({
         </h3>
         
         <div className="flex gap-2 overflow-x-auto pb-1">
-          {tubeKeys.map(key => {
+          {tubeKeys.map((key) => {
           const value = tubes[key];
           const maxValue = MAX_TUBES[key];
           const percentage = value / maxValue * 100;
@@ -49,13 +49,13 @@ export function TubeGauge({
   }
 
   // Desktop vertical list layout
-  return <div className="bg-card/50 rounded-xl p-4 border border-border px-[11px] py-[11px]">
+  return <div className="bg-card/50 rounded-xl p-4 border px-[8px] py-[6px] border-fuchsia-500 border-dashed">
       <h3 className="text-sm font-semibold uppercase tracking-wider mb-4 text-center text-destructive-foreground">
         Stack Tubes
       </h3>
       
       <div className="flex flex-col gap-3">
-        {tubeKeys.map(key => {
+        {tubeKeys.map((key) => {
         const value = tubes[key];
         const maxValue = MAX_TUBES[key];
         const percentage = value / maxValue * 100;
