@@ -392,7 +392,6 @@ tube_poker/
 * Regulatory compliance toolkit
 
 # Final Assessment
-
 Poker-Tube is a deterministic wagering economy engine featuring:
 * Controlled volatility
 * Tunable house edge
