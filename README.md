@@ -5,15 +5,14 @@ Economic Control Systems, Architecture & Simulation Infrastructure
 Version 1.0
 # Poker-Tube (“Alien” Poker Software)
 #### Prototype 1: https://alienpoker.lovable.app/
-###$ Prototype 2: https://alienp0ker.lovable.app/
+#### Prototype 2: https://alienp0ker.lovable.app/
 
 ## Deterministic Adaptive Poker Economy Engine
 ### System Design, Architecture & Simulation Framework
 
 **Version 1.0 — Production-Grade Prototype Specification**
 # 1. System Classification
-**System Type:**
-Financial-grade deterministic simulation engine with dynamic liquidity-based payout pools.
+**System Type:**:Financial-grade deterministic simulation engine with dynamic liquidity-based payout pools.
 
 This is not simply a poker game.
 It is a configurable wagering economy framework with programmable volatility and tunable house edge.
@@ -130,13 +129,11 @@ Monte Carlo validation mode:
 * Tube interaction frequency
 
 # 5. Stack Tube Economic Engine
-
 ## 5.1 Conceptual Model
 
 Replace fixed payouts with liquidity reservoirs:
 
 Active Tubes:
-
 * ST (Straight)
 * FL (Flush)
 * FH (Full House)
@@ -178,7 +175,6 @@ Extended options:
 * Liquidity throttling
 
 ## 5.4 Refill Logic
-
 Configurable behaviors:
 
 * Player-funded refill
