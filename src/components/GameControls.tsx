@@ -29,11 +29,11 @@ export function GameControls({
   canAffordAnte
 }: GameControlsProps) {
   return (
-    <div className="flex flex-col items-center gap-3 sm:gap-[8px]">
+    <div className="flex-col gap-3 flex items-center justify-center sm:gap-[6px]">
       {/* Credit Display with Animation */}
       <div className="text-center">
         <AnimatedCredits value={credits} className="justify-center" />
-        <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider mt-1 my-[2px]">
+        <div className="text-[10px] sm:text-xs uppercase tracking-wider mt-1 my-[2px] text-purple-400">
           Credits
         </div>
       </div>
