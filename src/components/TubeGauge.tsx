@@ -50,9 +50,9 @@ export function TubeGauge({
 
   // Desktop vertical list layout
   return <div className="bg-card/50 rounded-xl p-4 border px-[8px] py-[6px] border-fuchsia-500 border-dashed">
-      <h3 className="text-sm font-semibold uppercase tracking-wider mb-4 text-center text-destructive-foreground">
-        Stack Tubes
-      </h3>
+      <h3 className="text-sm font-semibold uppercase tracking-wider mb-4 text-center text-fuchsia-600">STACK FTUBES
+
+    </h3>
       
       <div className="flex flex-col gap-3">
         {tubeKeys.map((key) => {
@@ -79,7 +79,7 @@ export function TubeGauge({
                 </div>
               </div>
               
-              <span className={cn('text-xs font-bold w-8 text-left tabular-nums', isEmpty ? 'text-destructive' : 'text-foreground', isHighlighted && !isEmpty && 'text-casino-gold')}>
+              <span className={cn("text-xs w-8 text-left tabular-nums text-primary font-extrabold", isEmpty ? 'text-destructive' : 'text-foreground', isHighlighted && !isEmpty && 'text-casino-gold')}>
                 {value}
               </span>
             </div>;
