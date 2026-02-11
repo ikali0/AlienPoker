@@ -33,7 +33,7 @@ export function StatsPanel({
     value: busts,
     color: 'text-destructive'
   }];
-  return <div className="bg-card/50 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-border mx-2 sm:mx-0 px-[8px] py-[8px]">
+  return <div className="bg-card/50 rounded-lg sm:rounded-xl p-3 sm:p-4 border mx-2 sm:mx-0 px-[4px] py-[4px] border-fuchsia-500 border-dashed">
       <h3 className="text-sm font-semibold uppercase tracking-wider mb-4 text-center text-primary">
         ​scoreboard
       </h3>
