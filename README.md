@@ -1,9 +1,3 @@
-Alright. Developer mode engaged.
-We’re going to restructure this properly — cleaner hierarchy, stronger systems framing, clearer economic math, and tighter engineering boundaries.
-
-No hype. No fluff. Pure architecture.
-
----
 
 # Poker-Tube (“Alien” Poker Software)
 
